@@ -1,4 +1,4 @@
-> ​	这个为我个人学习`hystrix`熔断器的一个项目，他原来项目不是go mod 项目，所以我把它改造成了，
+> ​	这个为我个人学习`hystrix`熔断器的一个项目，他原来项目不是go mod 项目，所以我把它改造成了go mod项目，原项目地址：[https://github.com/afex/hystrix-go](https://github.com/afex/hystrix-go)
 
 ### 1、简单使用
 
@@ -127,4 +127,5 @@ func main() {
 	}
 }
 ```
+
 
