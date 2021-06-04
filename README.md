@@ -14,6 +14,12 @@
 
   > ​	但是其实你会发现了冲突，是因为不好控制`RequestVolumeThreshold`它的大小具体多少呢？通用配置么
 
+- `SleepWindow` 参数其实是一个很好的配置，因为如果服务发生熔断，那么你给他留多少buffer后再重试这个服务器，其实我们完全可以根据服务重启的一个时间决定或者服务不可用的时间！但是尽可能保证业务稳定性！
+
+- `MaxConcurrentRequests` 并不是表示限流器，而是最大的并发的数量，假如我现在设置为100，那么假如每个任务都是1s，那么此时放入200个任务，那么后面100个任务其实就超过了100并发数限制，只能返回错误降级！
+
+- `Timeout` 任务的超时时间，这个就很简单了！
+
 2、注意点
 
 我们需要学会配置这些参数！
@@ -291,3 +297,18 @@ type Number struct {
 ```
 
 所以对于写多读多的场景下，都符合我们的要求！
+
+```shell
+➜  hystrix-go git:(master) ✗ go test -run=none -bench=BenchmarkRollingNumberIncrement  -benchtime 20s  -benchmem -cpuprofile cpu.prof ./hystrix/rolling
+^[goos: darwin
+goarch: amd64
+pkg: github.com/afex/hystrix-go/hystrix/rolling
+BenchmarkRollingNumberIncrement-12      95024354               333 ns/op               0 B/op          0 allocs/op
+PASS
+ok      github.com/afex/hystrix-go/hystrix/rolling      32.053s
+```
+
+基本上可以看到大量时间在remove操作上！
+
+![image-20210604151621273](https://tyut.oss-accelerate.aliyuncs.com/image/2021/6-4/e962a01f00e740a482e149ee0a53d887.png)
+
