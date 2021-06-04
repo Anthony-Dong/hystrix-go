@@ -14,7 +14,7 @@ type CircuitBreaker struct {
 	open                   bool
 	forceOpen              bool
 	mutex                  *sync.RWMutex
-	openedOrLastTestedTime int64
+	openedOrLastTestedTime int64 // 打开熔断器的时间
 
 	executorPool *executorPool
 	metrics      *metricExchange
@@ -94,14 +94,17 @@ func (circuit *CircuitBreaker) IsOpen() bool {
 	o := circuit.forceOpen || circuit.open
 	circuit.mutex.RUnlock()
 
-	if o {
+	if o { // 半开或者开都是返回开
 		return true
 	}
 
+	// 假如过去10s的数据超过了请求 小于 请求的阀值，所以就是不care
+	// 假如过去请求大于这个值，继续判断
 	if uint64(circuit.metrics.Requests().Sum(time.Now())) < getSettings(circuit.Name).RequestVolumeThreshold {
 		return false
 	}
 
+	// 判断是健康
 	if !circuit.metrics.IsHealthy(time.Now()) {
 		// too many failures, open the circuit
 		circuit.setOpen()
@@ -124,7 +127,9 @@ func (circuit *CircuitBreaker) allowSingleTest() bool {
 
 	now := time.Now().UnixNano()
 	openedOrLastTestedTime := atomic.LoadInt64(&circuit.openedOrLastTestedTime)
+	// 如果当前时间>打开熔断器的时间+sleep的窗口
 	if circuit.open && now > openedOrLastTestedTime+getSettings(circuit.Name).SleepWindow.Nanoseconds() {
+		// 如果交换成功，其实就是解决并发问题
 		swapped := atomic.CompareAndSwapInt64(&circuit.openedOrLastTestedTime, openedOrLastTestedTime, now)
 		if swapped {
 			log.Printf("hystrix-go: allowing single test to possibly close circuit %v", circuit.Name)

@@ -8,7 +8,7 @@ import (
 // Number tracks a numberBucket over a bounded number of
 // time buckets. Currently the buckets are one second long and only the last 10 seconds are kept.
 type Number struct {
-	Buckets map[int64]*numberBucket
+	Buckets map[int64]*numberBucket // key是最近10s，value是数量
 	Mutex   *sync.RWMutex
 }
 
@@ -49,6 +49,9 @@ func (r *Number) removeOldBuckets() {
 	}
 }
 
+// 增加的时候是获取当前的bucket，然后再删除老的bucket
+// 好处是可以维护数量
+// 假如一开始我们来了个流量，第一个bucket[1]=1，然后呢11s又来了流量，此时bucket[11]=1，然后去删除旧的，此时可以因为1<=11-10，是的所以删除它，完美哈哈哈哈，可以解决这个问题
 // Increment increments the number in current timeBucket.
 func (r *Number) Increment(i float64) {
 	if i == 0 {

@@ -94,7 +94,7 @@ func GoC(ctx context.Context, name string, run runFuncC, fallback fallbackFuncC)
 	// When the caller extracts error from returned errChan, it's assumed that
 	// the ticket's been returned to executorPool. Therefore, returnTicket() can
 	// not run after cmd.errorWithFallback().
-	returnTicket := func() {
+	returnTicket := func() { // 返回令牌
 		cmd.Lock()
 		// Avoid releasing before a ticket is acquired.
 		for !ticketChecked {
@@ -119,7 +119,7 @@ func GoC(ctx context.Context, name string, run runFuncC, fallback fallbackFuncC)
 		// Circuits get opened when recent executions have shown to have a high error rate.
 		// Rejecting new executions allows backends to recover, and the circuit will allow
 		// new traffic when it feels a healthly state has returned.
-		if !cmd.circuit.AllowRequest() {
+		if !cmd.circuit.AllowRequest() { // 是否可以执行，这是如果是否走下面
 			cmd.Lock()
 			// It's safe for another goroutine to go ahead releasing a nil ticket.
 			ticketChecked = true
@@ -127,7 +127,7 @@ func GoC(ctx context.Context, name string, run runFuncC, fallback fallbackFuncC)
 			cmd.Unlock()
 			returnOnce.Do(func() {
 				returnTicket()
-				cmd.errorWithFallback(ctx, ErrCircuitOpen)
+				cmd.errorWithFallback(ctx, ErrCircuitOpen) // 抛出熔断器已经打开了
 				reportAllEvent()
 			})
 			return
@@ -140,7 +140,7 @@ func GoC(ctx context.Context, name string, run runFuncC, fallback fallbackFuncC)
 		// shed load which accumulates due to the increasing ratio of active commands to incoming requests.
 		cmd.Lock()
 		select {
-		case cmd.ticket = <-circuit.executorPool.Tickets:
+		case cmd.ticket = <-circuit.executorPool.Tickets: // 限流器，如果拿到令牌就继续执行了，这里按理来说应该不允许预先消费
 			ticketChecked = true
 			ticketCond.Signal()
 			cmd.Unlock()

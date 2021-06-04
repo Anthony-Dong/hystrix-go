@@ -130,21 +130,22 @@ func (m *metricExchange) requestsLocked() *rolling.Number {
 	return m.DefaultCollector().NumRequests()
 }
 
+// 获取失败率
 func (m *metricExchange) ErrorPercent(now time.Time) int {
 	m.Mutex.RLock()
 	defer m.Mutex.RUnlock()
 
 	var errPct float64
-	reqs := m.requestsLocked().Sum(now)
-	errs := m.DefaultCollector().Errors().Sum(now)
+	reqs := m.requestsLocked().Sum(now) //过去10s的流量
+	errs := m.DefaultCollector().Errors().Sum(now) // 过去10s的异常流量
 
 	if reqs > 0 {
 		errPct = (float64(errs) / float64(reqs)) * 100
 	}
-
+	//fmt.Printf("reqs:%.0f, errs: %.0f, errPct: %.2f, res: %d, bool: %v\n",reqs,errs,errPct,int(errPct + 0.5),int(errPct + 0.5)<10)
 	return int(errPct + 0.5)
 }
 
 func (m *metricExchange) IsHealthy(now time.Time) bool {
-	return m.ErrorPercent(now) < getSettings(m.Name).ErrorPercentThreshold
+	return m.ErrorPercent(now) < getSettings(m.Name).ErrorPercentThreshold // 如果当前的错误率小于阀值就健康，如果大于等于就不健康
 }
