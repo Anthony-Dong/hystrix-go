@@ -312,3 +312,8 @@ ok      github.com/afex/hystrix-go/hystrix/rolling      32.053s
 
 ![image-20210604151621273](https://tyut.oss-accelerate.aliyuncs.com/image/2021/6-4/e962a01f00e740a482e149ee0a53d887.png)
 
+我改进的代码：[microservice/follow.go](microservice/follow.go)
+
+2、限流
+
+我改进的代码：[microservice/ticket.go](microservice/ticket.go)
